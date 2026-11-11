@@ -4,7 +4,7 @@ This is my first ever CLI tool made in Go, meant to help with your focus and stu
 
 ## Description
 
-Focus is a lightweight command-line timer designed to keep you in the zone without leaving your terminal. Whether you are using the Pomodoro technique, timing a quick study sprint, or setting a short break, you can pass in custom minutes and seconds to start a distraction-free countdown immediately. No background apps, browsers, or extra installations required.
+Focus is a lightweight command-line timer designed to keep you in the zone without leaving your terminal. Whether you are using the Pomodoro technique, timing a quick study sprint, or setting a short break, you can pass in custom minutes and seconds to start a countdown immediately. No background apps, browsers, or extra installations required.
 
 ### Screenshots
 
