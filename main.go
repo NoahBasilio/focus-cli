@@ -13,18 +13,21 @@ import (
 func main() {
 	var minutes int
 	var seconds int
-	
+	var breaks int
+	var breakInterval int
+	var secondsForBreaks int
 
 	clearTerminal()
 	minutesPtr := flag.Int("m", 0, "minutes to study")
 	secondsPtr := flag.Int("s", 0, "seconds to study")
+	breakPtr := flag.Int("b", 0, "minutes until a break")
 
 	// Old flag.Usage() kept printing the whole dir where it was located lmao
 	// It was pissing me off lwk
 	flag.Usage = func() {
 		fmt.Println("\nFocus CLI - A simple terminal study timer")
 		fmt.Println("Written in Go/Golang")
-		fmt.Println("Example: focus -m <minutes> -s <seconds>")
+		fmt.Println("Example: focus -m <minutes> -s <seconds> -b <mins until break>")
 		fmt.Println()
 		fmt.Println("Flags:")
 		flag.PrintDefaults()
@@ -33,14 +36,14 @@ func main() {
 
 	flag.Parse()
 
-
 	if *minutesPtr <= 0 && *secondsPtr <= 0 {
 		flag.Usage()
 		return
-	} 
-	
+	}
+
 	minutes = *minutesPtr
 	seconds = *secondsPtr
+	breaks = *breakPtr
 	if *secondsPtr <= 0 {
 		fmt.Println("Starting study timer for", minutes, "minute(s)...")
 	} else if *minutesPtr <= 0 {
@@ -48,17 +51,27 @@ func main() {
 	} else {
 		fmt.Println("Starting a study timer for", minutes, "minute(s) and", seconds, "second(s)...")
 	}
-	
-	
+
+	if *breakPtr > 0 {
+		breakInterval = breaks * 60
+		secondsForBreaks = breakInterval
+	}
+
 	totalSeconds := (minutes * 60) + seconds
 	seconds = totalSeconds
+	endingTime := time.Now().Add(time.Duration(totalSeconds) * time.Second)
+
+	green := "\033[32m"
+	reset := "\033[0m"
+	yellow := "\033[33m"
 	for seconds > 0 {
 		time.Sleep(1 * time.Second)
-		seconds -= 1
-		
+		seconds--
+		if breakInterval > 0 {
+			secondsForBreaks--
+		}
+
 		// Finally got this ASCII bar to work, it wasn't even that hard idk why I struggled so much
-		green := "\033[32m"
-		reset := "\033[0m"
 
 		elapsed := totalSeconds - seconds
 		filled := (elapsed * 25) / totalSeconds
@@ -67,7 +80,19 @@ func main() {
 
 		minsLeft := seconds / 60
 		secsLeft := seconds % 60
-		fmt.Printf("\r[%s] %02d:%02d remaining", bar, minsLeft, secsLeft)
+		fmt.Printf("\r[%s] %02d:%02d remaining (Ends at: %s)", bar, minsLeft, secsLeft, endingTime.Format("3:04 PM"))
+
+		if secondsForBreaks == 0 && seconds > 0 && breakInterval > 0 {
+			terminalBeep()
+			fmt.Println("\nTime for a break!")
+
+			for b := 5 * 60; b > 0; b-- {
+				fmt.Printf("\r%s[BREAK]%s %02d:%02d remaining	", yellow, reset, b/60, b%60)
+				time.Sleep(1 * time.Second)
+			}
+			secondsForBreaks = breakInterval
+			clearTerminal()
+		}
 	}
 	fmt.Println()
 	terminalBeep()
@@ -89,12 +114,12 @@ func clearTerminal() {
 func terminalBeep() {
 	var beep *exec.Cmd
 	switch runtime.GOOS {
-		case "windows":
-			beep = exec.Command("powershell", "-c", `(New-Object Media.SoundPlayer "C:\Windows\Media\Alarm01.wav").PlaySync()`)
-		case "darwin":
-			beep = exec.Command("afplay", "/System/Library/Sounds/Glass.aiff")
-		default:
-			beep = exec.Command("paplay", "/usr/share/sounds/freedesktop/stereo/complete.oga")
+	case "windows":
+		beep = exec.Command("powershell", "-c", `(New-Object Media.SoundPlayer "C:\Windows\Media\Alarm01.wav").PlaySync()`)
+	case "darwin":
+		beep = exec.Command("afplay", "/System/Library/Sounds/Glass.aiff")
+	default:
+		beep = exec.Command("paplay", "/usr/share/sounds/freedesktop/stereo/complete.oga")
 	}
 
 	beep.Stdout = os.Stdout
